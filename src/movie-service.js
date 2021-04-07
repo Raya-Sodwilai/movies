@@ -1,17 +1,47 @@
 export default class MovieService {  
-  static search(searchText) {
-    return new Promise(function(resolve, reject) {
-      let request = new XMLHttpRequest();
-      const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.API_KEY}&language=en-US&query=${searchText}`;
-      request.onload = function() {
-        if (this.status === 200) {
-          resolve(request.response);
-        } else {
-          reject(request.response);
+  static async search(searchText) {
+    let allData = [];
+    let morePagesAvailable = true;
+    let currentPage = 0;
+
+    while (morePagesAvailable) {
+      currentPage++;
+      try {
+        const response = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${process.env.API_KEY}&language=en-US&query=${searchText}&page=${currentPage}`);
+        if (!response.ok) {
+          throw Error(response.statusText)
         }
+  
+        let { results, total_pages } = await response.json();
+
+        results.forEach(movie => allData.push(movie));
+        morePagesAvailable = currentPage < total_pages;
+      } catch (error) {
+        return error.message;
       }
-      request.open("GET", url, true);
-      request.send();
+    }
+
+    return allData.sort((a, b) => {
+      if ((!a.release_date || !b.release_date) || a.release_date < b.release_date) {
+        return -1;
+      }
+      if (a.release_date > b.release_date) {
+        return 1;
+      }
+
+      return 0;
     });
+  }
+
+  static async getMovie(movieId) {
+    try {
+      const response = await fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.API_KEY}&language=en-US`);
+      if (!response.ok) {
+        throw Error(response.statusText)
+      }
+      return response.json();
+    } catch (error) {
+      return error.message;
+    } 
   }
 }
