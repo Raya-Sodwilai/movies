@@ -44,4 +44,16 @@ export default class MovieService {
       return error.message;
     } 
   }
+
+  static async getTrailer(movieId) {
+    try {
+      const response = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${process.env.API_KEY}&language=en-US`);
+      if (!response.ok) {
+        throw Error(response.statusText)
+      }
+      return response.json();
+    } catch (error) {
+      return error.message;
+    }
+  }
 }
